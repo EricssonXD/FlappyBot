@@ -1,27 +1,32 @@
-from tkinter import Y
-import pygame
 import sys
+import pygame
 import random
+import numpy as np
+from pygame.sprite import Sprite, Group
 
-# Game Constants
+# Constants
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 600
 GRAVITY = 0.08
-FLAP_STRENGTH = -10
-PIPE_SPEED = 5
+FLAP_STRENGTH = -9
+PIPE_SPEED = 6
 PIPE_GAP = 150
+PIPE_SPACING = 200  # Distance between pipes
 
 # Colors
 WHITE = (255, 255, 255)
-SKY_BLUE = (135, 206, 235)
 GREEN = (0, 255, 0)
+SKY_BLUE = (135, 206, 235)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 
-class Bird:
+
+class Bird(Sprite):
     def __init__(self):
-        self.x = 50
-        self.y = SCREEN_HEIGHT // 2
+        super().__init__()
+        self.image = pygame.Surface((30, 30), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, YELLOW, (15, 15), 15)
+        self.rect = self.image.get_rect(center=(50, SCREEN_HEIGHT // 2))
         self.velocity = 0
         self.acceleration = 0
 
@@ -32,89 +37,120 @@ class Bird:
     def update(self):
         self.acceleration += GRAVITY
         self.velocity += self.acceleration
-        self.y += self.velocity
+        self.rect.y += self.velocity
 
-class Pipe:
-    def __init__(self):
-        self.x = SCREEN_WIDTH
-        self.height = random.randint(100, 400)
-        self.passed = False
+
+class Pipe(Sprite):
+    def __init__(self, inverted=False):
+        super().__init__()
+        self.image = pygame.Surface((50, SCREEN_HEIGHT), pygame.SRCALPHA)
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+
+        if inverted:
+            # Top pipe
+            self.rect.bottomleft = (
+                SCREEN_WIDTH,
+                random.randint(100, 400) - PIPE_GAP // 2,
+            )
+        else:
+            # Bottom pipe
+            self.rect.topleft = (SCREEN_WIDTH, random.randint(100, 400) + PIPE_GAP // 2)
 
     def update(self):
-        self.x -= PIPE_SPEED
+        self.rect.x -= PIPE_SPEED
+        if self.rect.right < 0:
+            self.kill()  # Remove offscreen pipes
 
-    def offscreen(self):
-        return self.x < -50
 
 class Game:
-    def __init__(self):
+    def __init__(self, training_mode=True):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
         self.bird = Bird()
-        self.pipes = [Pipe()]
+        self.pipes = Group()
+        self.all_sprites = Group()
+        self.all_sprites.add(self.bird)
         self.score = 0
+        self.training_mode = training_mode  # Disable rendering for faster training
 
     def reset(self):
+        self.all_sprites.empty()
+        self.pipes.empty()
         self.bird = Bird()
-        self.pipes = [Pipe()]
+        self.all_sprites.add(self.bird)
+        self._add_pipe()
         self.score = 0
-        return self.get_state()
+        return self._get_state()
 
-    def get_state(self):
-        # State: [bird_y, bird_velocity, distance_to_next_pipe, pipe_top, pipe_bottom]
+    def _add_pipe(self):
+        # Add top and bottom pipes as a pair
+        y = random.randint(100, 400)
+        top_pipe = Pipe(inverted=True)
+        top_pipe.rect.bottom = y - PIPE_GAP // 2
+        bottom_pipe = Pipe()
+        bottom_pipe.rect.top = y + PIPE_GAP // 2
+        self.pipes.add(top_pipe, bottom_pipe)
+        self.all_sprites.add(top_pipe, bottom_pipe)
+
+    def _get_state(self):
+        # State: [bird_y, bird_velocity, next_pipe_x, next_pipe_top, next_pipe_bottom]
         if len(self.pipes) > 0:
-            next_pipe = self.pipes[0]
-            horizontal_dist = next_pipe.x - self.bird.x
-            vertical_dist_top = self.bird.y - (next_pipe.height - PIPE_GAP // 2)
-            vertical_dist_bottom = (next_pipe.height + PIPE_GAP // 2) - self.bird.y
-            return [self.bird.y, self.bird.velocity, horizontal_dist, vertical_dist_top, vertical_dist_bottom]
+            next_pipe = sorted(self.pipes, key=lambda p: p.rect.x)[0]  # Closest pipe
+            return np.array(
+                [
+                    self.bird.rect.centery / SCREEN_HEIGHT,  # Normalized
+                    self.bird.velocity / 10,  # Scaled
+                    (next_pipe.rect.centerx - self.bird.rect.centerx) / SCREEN_WIDTH,
+                    (next_pipe.rect.bottom - self.bird.rect.centery) / SCREEN_HEIGHT,
+                    (next_pipe.rect.top - self.bird.rect.centery) / SCREEN_HEIGHT,
+                ],
+                dtype=np.float32,
+            )
         else:
-            return [0] * 5  # Default state if no pipes
+            return np.zeros(5, dtype=np.float32)
 
     def step(self, action):
-        # Action: 0 = do nothing, 1 = flap
+        # Action: 0 = no flap, 1 = flap
         if action == 1:
             self.bird.flap()
 
-        # Update bird and pipes
-        self.bird.update()
-        for pipe in self.pipes:
-            pipe.update()
+        # Update sprites
+        self.all_sprites.update()
+
+        # Add new pipes
+        if (
+            len(self.pipes) == 0
+            or self.pipes.sprites()[-1].rect.x < SCREEN_WIDTH - PIPE_SPACING
+        ):
+            self._add_pipe()
 
         # Check collisions
-        if self.bird.y < 0:
-            done = True
+        collision = pygame.sprite.spritecollideany(self.bird, self.pipes)
+        out_of_bounds = self.bird.rect.top < 0 or self.bird.rect.bottom > SCREEN_HEIGHT
+        done = collision or out_of_bounds
+
+        # Calculate reward
+        reward = 0.1  # Survival reward
+        if done:
             reward = -1000
-        else:
-            done = False
-            reward = 0.1  # Small reward for surviving
-
-        # Add new pipes and remove offscreen pipes
-        if self.pipes[-1].x < SCREEN_WIDTH - 200:
-            self.pipes.append(Pipe())
-        self.pipes = [pipe for pipe in self.pipes if not pipe.offscreen()]
-
-        # Check scoring
-        if not self.pipes[0].passed and self.pipes[0].x < self.bird.x:
+        elif self.pipes.sprites()[0].rect.right < self.bird.rect.left:
             self.score += 1
-            self.pipes[0].passed = True
-            reward = 10  # Big reward for passing a pipe
+            reward = 10  # Passed a pipe
 
-        # Get next state
-        next_state = self.get_state()
-        return next_state, reward, done
+        # Render if not in training mode
+        if not self.training_mode:
+            self.render()
+
+        return self._get_state(), reward, done
 
     def render(self):
         self.screen.fill(SKY_BLUE)
-        # Draw bird
-        pygame.draw.circle(self.screen, YELLOW, (self.bird.x, int(self.bird.y)), 15)
-        # Draw pipes
-        for pipe in self.pipes:
-            pygame.draw.rect(self.screen, GREEN, (pipe.x, 0, 50, pipe.height - PIPE_GAP // 2))
-            pygame.draw.rect(self.screen, GREEN, (pipe.x, pipe.height + PIPE_GAP // 2, 50, SCREEN_HEIGHT))
-        pygame.display.update()
+        self.all_sprites.draw(self.screen)
+        pygame.display.flip()
         self.clock.tick(30)
+
 
 def run():
     game = Game()
@@ -132,6 +168,8 @@ def run():
         if done:
             game.reset()
 
+
 if __name__ == "__main__":
     run()
     pygame.quit()
+    sys.exit()
