@@ -127,7 +127,7 @@ class Game:
                     self.bird.rect.centery / SCREEN_HEIGHT,  # Normalized
                     next_top_pipe / SCREEN_HEIGHT,  # Normalized
                     next_bottom_pipe / SCREEN_HEIGHT,  # Normalized
-                    # self.bird.velocity / 10,  # Scaled
+                    self.bird.velocity / 10,  # Scaled
                     # (next_pipe[0].rect.centerx - self.bird.rect.right) / SCREEN_WIDTH,
                     # (next_pipe[0].rect.bottom) / SCREEN_HEIGHT,
                     # (next_pipe[1].rect.top) / SCREEN_HEIGHT,

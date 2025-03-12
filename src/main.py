@@ -1,4 +1,5 @@
 TRAINING = True
+PRINT_TIME = False
 
 if TRAINING:
     import os
@@ -16,7 +17,7 @@ def train():
     env = flappy_bird.Game(training_mode=True)
     agent = Agent(state_size=STATE_SIZE, action_size=2)
     episodes = 1000
-    batch_size = 32
+    batch_size = 64
 
     # Try to load checkpoint
     agent.load_checkpoint("checkpoint.pth")  # Load model, optimizer, and epsilon
@@ -27,7 +28,7 @@ def train():
         done = False
 
         while not done:
-            # start_time = time.time()
+            start_time = time.time()
 
             action = agent.act(state)
             next_state, reward, done = env.step(action)
@@ -37,8 +38,9 @@ def train():
             agent.replay(batch_size)
             pygame.event.pump()
 
-            # end_time = time.time()
-            # print(f"Step took: {end_time - start_time:.6f} seconds")
+            end_time = time.time()
+            if PRINT_TIME:
+                print(f"Step took: {end_time - start_time:.6f} seconds")
 
         print(f"Episode: {episode+1}, Score: {env.score}, Epsilon: {agent.epsilon:.2f}")
         # Save checkpoint every 50 episodes
