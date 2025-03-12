@@ -164,9 +164,9 @@ class Game:
                 reward += 1000
 
         # Render if not in training mode
-        if not self.training_mode:
-            self.render()
-        # self.render()
+        # if not self.training_mode:
+        #     self.render()
+        self.render()
 
         if not self.training_mode:
             # self.clock.tick(TRAINING_FPS)

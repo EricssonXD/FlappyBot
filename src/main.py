@@ -3,7 +3,7 @@ TRAINING = True
 if TRAINING:
     import os
 
-    os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
+    # os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
 import time  # noqa: E402
 import pygame  # noqa: E402
 import flappy_bird  # noqa: E402
@@ -16,6 +16,9 @@ def train():
     agent = Agent(state_size=5, action_size=2)
     episodes = 1000
     batch_size = 32
+
+    # Try to load checkpoint
+    agent.load_checkpoint("checkpoint.pth")  # Load model, optimizer, and epsilon
 
     for episode in range(episodes):
         state = env.reset()
@@ -37,6 +40,9 @@ def train():
             print(f"Step took: {end_time - start_time:.6f} seconds")
 
         print(f"Episode: {episode+1}, Score: {env.score}, Epsilon: {agent.epsilon:.2f}")
+        # Save checkpoint every 50 episodes
+        if (episode + 1) % 50 == 0:
+            agent.save_checkpoint("checkpoint.pth")
 
     torch.save(agent.model.state_dict(), "models/flappy_dqn.pth")
 
