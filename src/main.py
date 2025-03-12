@@ -1,9 +1,9 @@
-TRAINING = True
+TRAINING = False
 
 if TRAINING:
     import os
 
-    os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
+    # os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
 
 
 import time
@@ -16,10 +16,12 @@ import torch
 def train():
     env = flappy_bird.Game(training_mode=True)
     agent = Agent(state_size=5, action_size=2)
-    episodes = 1000
-    batch_size = 128
+    episodes = 2000
+    batch_size = 64
 
-    agent.load_checkpoint("checkpoint.pth")  # Load model, optimizer, and epsilon
+    agent.load_checkpoint(
+        "checkpoint.pth", epsilon=0.2
+    )  # Load model, optimizer, and epsilon
     # agent.load_checkpoint("flappy_dqn_gen0.pth")  # Load model, optimizer, and epsilon
 
     for episode in range(episodes):
@@ -51,8 +53,8 @@ def train():
 def test():
     env = flappy_bird.Game()
     agent = Agent(state_size=5, action_size=2)
-    # agent.model.load_state_dict(torch.load("models/flappy_dqn.pth"))
-    agent.load_checkpoint("checkpoint.pth")  # Load model, optimizer, and epsilon
+    agent.model.load_state_dict(torch.load("models/flappy_dqn_gen0.pth"))
+    # agent.load_checkpoint("checkpoint.pth")  # Load model, optimizer, and epsilon
     agent.epsilon = 0.0  # Disable exploration
 
     state = env.reset()

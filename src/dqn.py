@@ -32,8 +32,8 @@ class Agent:
         self.gamma = 0.99
         self.epsilon = 1.0
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
-        self.alpha = 0.4  # Prioritization exponent
+        self.epsilon_decay = 0.9995
+        self.alpha = 0.6  # Prioritization exponent
         # self.model = nn.DataParallel(DQN(state_size, action_size)).to(device)
         self.model = DQN(state_size, action_size).to(device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
@@ -61,13 +61,15 @@ class Agent:
         torch.save(checkpoint, filename)
         print(f"Checkpoint saved to {filename}")
 
-    def load_checkpoint(self, filename="checkpoints/checkpoint.pth"):
+    def load_checkpoint(self, filename="checkpoints/checkpoint.pth", epsilon=None):
         try:
             checkpoint = torch.load(filename, map_location=device)
             self.model.load_state_dict(checkpoint["model_state"])
             self.model.to(device)
             self.optimizer.load_state_dict(checkpoint["optimizer_state"])
             self.epsilon = checkpoint["epsilon"]
+            if epsilon is not None:
+                self.epsilon = epsilon
             print(f"Loaded checkpoint from {filename}")
         except FileNotFoundError:
             print("No checkpoint found. Starting fresh.")
@@ -188,7 +190,7 @@ class Agent:
                     actions[i],
                     rewards[i],
                     next_states[i],
-                    # dones[i],
+                    True,
                 )
 
         # Decay epsilon

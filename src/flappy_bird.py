@@ -103,14 +103,14 @@ class Game:
     def _get_state(self):
         # State: [bird_y, bird_velocity, next_pipe_x, next_pipe_top, next_pipe_bottom]
         if len(self.pipes) > 0:
-            next_pipe = sorted(self.pipes, key=lambda p: p.rect.x)[0]  # Closest pipe
+            next_pipe = sorted(self.pipes, key=lambda p: p.rect.x)  # Closest pipe
             return np.array(
                 [
                     self.bird.rect.centery / SCREEN_HEIGHT,  # Normalized
                     self.bird.velocity / 10,  # Scaled
-                    (next_pipe.rect.centerx - self.bird.rect.centerx) / SCREEN_WIDTH,
-                    (next_pipe.rect.bottom - self.bird.rect.centery) / SCREEN_HEIGHT,
-                    (next_pipe.rect.top - self.bird.rect.centery) / SCREEN_HEIGHT,
+                    (next_pipe[0].rect.centerx - self.bird.rect.centerx) / SCREEN_WIDTH,
+                    (next_pipe[0].rect.top - self.bird.rect.top) / SCREEN_HEIGHT,
+                    (next_pipe[1].rect.bottom - self.bird.rect.bottom) / SCREEN_HEIGHT,
                 ],
                 dtype=np.float32,
             )
@@ -159,7 +159,7 @@ class Game:
         # Render if not in training mode
         if not self.training_mode:
             self.render()
-        # self.render()
+        self.render()
 
         if not self.training_mode:
             # self.clock.tick(TRAINING_FPS)
