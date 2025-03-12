@@ -3,6 +3,7 @@ import pygame
 import random
 import numpy as np
 from pygame.sprite import Sprite, Group
+import os
 
 # Constants
 SCREEN_WIDTH = 400
@@ -19,6 +20,16 @@ GREEN = (0, 255, 0)
 SKY_BLUE = (135, 206, 235)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
+BLACK = (0, 0, 0)
+
+pygame.init()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+font_path = os.path.join(BASE_DIR, "..", "assets", "fonts", "flappy-font.ttf")
+font = pygame.font.Font(font_path, 48)
+
+# pygame.font.init()  # you have to call this at the start,
+# if you want to use this module.
+# font = pygame.font.SysFont("Comic Sans MS", 30)
 
 
 class Bird(Sprite):
@@ -46,6 +57,7 @@ class Pipe(Sprite):
         self.image = pygame.Surface((50, SCREEN_HEIGHT), pygame.SRCALPHA)
         self.image.fill(GREEN)
         self.rect = self.image.get_rect()
+        self.passed = False
 
         if inverted:
             # Top pipe
@@ -61,11 +73,11 @@ class Pipe(Sprite):
         self.rect.x -= PIPE_SPEED
         if self.rect.right < 0:
             self.kill()  # Remove offscreen pipes
+            del self
 
 
 class Game:
     def __init__(self, training_mode=True):
-        pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
         self.bird = Bird()
@@ -129,13 +141,17 @@ class Game:
         # Check collisions
         collision = pygame.sprite.spritecollideany(self.bird, self.pipes)
         out_of_bounds = self.bird.rect.top < 0 or self.bird.rect.bottom > SCREEN_HEIGHT
-        done = collision or out_of_bounds
+        gameover = collision or out_of_bounds
 
         # Calculate reward
         reward = 0.1  # Survival reward
-        if done:
+        if gameover:
             reward = -1000
-        elif self.pipes.sprites()[0].rect.right < self.bird.rect.left:
+        elif (
+            self.pipes.sprites()[0].rect.right < self.bird.rect.left
+            and not self.pipes.sprites()[0].passed
+        ):
+            self.pipes.sprites()[0].passed = True
             self.score += 1
             reward = 10  # Passed a pipe
 
@@ -143,11 +159,18 @@ class Game:
         if not self.training_mode:
             self.render()
 
-        return self._get_state(), reward, done
+        return self._get_state(), reward, gameover
 
     def render(self):
+        score_text = font.render(f"{self.score}", False, BLACK)
+        score_text_rect = score_text.get_rect()
+        score_text_rect.centerx = self.screen.get_rect().centerx
+        score_text_rect.top = 10
+
         self.screen.fill(SKY_BLUE)
         self.all_sprites.draw(self.screen)
+        self.screen.blit(score_text, score_text_rect)
+
         pygame.display.flip()
         self.clock.tick(30)
 
