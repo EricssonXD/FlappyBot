@@ -111,13 +111,26 @@ class Game:
         # State: [bird_y, bird_velocity, next_pipe_x, next_pipe_top, next_pipe_bottom]
         if len(self.pipes) > 0:
             next_pipe = sorted(self.pipes, key=lambda p: p.rect.x)  # Closest pipe
+            # Get the pythagarous distance be1tween the bird and the next pipe's top
+            next_top_pipe = np.sqrt(
+                (self.bird.rect.centerx - next_pipe[0].rect.centerx) ** 2
+                + (self.bird.rect.centery - next_pipe[0].rect.bottom) ** 2
+            )
+
+            next_bottom_pipe = np.sqrt(
+                (self.bird.rect.centerx - next_pipe[1].rect.centerx) ** 2
+                + (self.bird.rect.centery - next_pipe[1].rect.top) ** 2
+            )
+
             s = np.array(
                 [
                     self.bird.rect.centery / SCREEN_HEIGHT,  # Normalized
-                    self.bird.velocity / 10,  # Scaled
-                    (next_pipe[0].rect.centerx - self.bird.rect.right) / SCREEN_WIDTH,
-                    (next_pipe[0].rect.bottom) / SCREEN_HEIGHT,
-                    (next_pipe[1].rect.top) / SCREEN_HEIGHT,
+                    next_top_pipe / SCREEN_HEIGHT,  # Normalized
+                    next_bottom_pipe / SCREEN_HEIGHT,  # Normalized
+                    # self.bird.velocity / 10,  # Scaled
+                    # (next_pipe[0].rect.centerx - self.bird.rect.right) / SCREEN_WIDTH,
+                    # (next_pipe[0].rect.bottom) / SCREEN_HEIGHT,
+                    # (next_pipe[1].rect.top) / SCREEN_HEIGHT,
                 ],
                 dtype=np.float32,
             )
@@ -150,8 +163,10 @@ class Game:
         gameover = collision or out_of_bounds
 
         # Calculate reward
-        if gameover:
+        if collision:
             reward += COLLISION_REWARD
+        elif out_of_bounds:
+            reward += OUT_OF_BOUNDS_REWARD
         elif (
             not self.pipes.sprites()[0].passed
             and self.pipes.sprites()[0].rect.right < self.bird.rect.left
