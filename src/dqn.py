@@ -5,6 +5,9 @@ import numpy as np
 from collections import deque
 import random
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
 
 class DQN(nn.Module):
     def __init__(self, input_size, output_size):
@@ -29,7 +32,7 @@ class Agent:
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
         self.alpha = 0.6  # Prioritization exponent
-        self.model = DQN(state_size, action_size)
+        self.model = DQN(state_size, action_size).to(device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
     def remember(self, state, action, reward, next_state, done):
@@ -40,7 +43,7 @@ class Agent:
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
-        state = torch.FloatTensor(state)
+        state = torch.tensor(state, dtype=torch.float32, device=device)
         with torch.no_grad():
             q_values = self.model(state)
         return torch.argmax(q_values).item()
@@ -65,13 +68,15 @@ class Agent:
             # Compute target and loss
             target = reward
             if not done:
-                next_state = torch.FloatTensor(next_state)
+                next_state = torch.tensor(
+                    next_state, dtype=torch.float32, device=device
+                )
                 target = reward + self.gamma * torch.max(self.model(next_state)).item()
 
-            state = torch.FloatTensor(state)
+            state = torch.tensor(state, dtype=torch.float32, device=device)
             predicted = self.model(state)[action]
             loss = torch.nn.functional.mse_loss(
-                predicted, torch.tensor(target, dtype=torch.float)
+                predicted, torch.tensor(target, dtype=torch.float32, device=device)
             )
 
             # Backpropagation

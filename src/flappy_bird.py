@@ -4,7 +4,7 @@ import random
 import numpy as np
 from pygame.sprite import Sprite, Group
 import os
-from config import *
+from config import *  # noqa: F403
 
 # Colors
 WHITE = (255, 255, 255)
