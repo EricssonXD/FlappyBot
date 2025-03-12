@@ -1,11 +1,14 @@
-import os
+TRAINING = True
 
-os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
-# import time
-import pygame
-import flappy_bird
-from dqn import Agent
-import torch
+if TRAINING:
+    import os
+
+    os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
+import time  # noqa: E402
+import pygame  # noqa: E402
+import flappy_bird  # noqa: E402
+from dqn import Agent  # noqa: E402
+import torch  # noqa: E402
 
 
 def train():
@@ -20,7 +23,8 @@ def train():
         done = False
 
         while not done:
-            # start_time = time.time()
+            start_time = time.time()
+
             action = agent.act(state)
             next_state, reward, done = env.step(action)
             agent.remember(state, action, reward, next_state, done)
@@ -28,8 +32,9 @@ def train():
             total_reward += reward
             agent.replay(batch_size)
             pygame.event.pump()
-            # end_time = time.time()
-            # print(f"Step took: {end_time - start_time:.6f} seconds")
+
+            end_time = time.time()
+            print(f"Step took: {end_time - start_time:.6f} seconds")
 
         print(f"Episode: {episode+1}, Score: {env.score}, Epsilon: {agent.epsilon:.2f}")
 
@@ -50,6 +55,8 @@ def test():
 
 
 if __name__ == "__main__":
-    train()  # Switch to test() to see the trained AI
-    # test()
-    # flappy_bird.run()
+    if TRAINING:
+        train()  # Switch to test() to see the trained AI
+    else:
+        # test()
+        flappy_bird.run()

@@ -34,14 +34,21 @@ class Bird(Sprite):
         self.rect = self.image.get_rect(center=(50, SCREEN_HEIGHT // 2))
         self.velocity = 0
         self.acceleration = 0
+        self.flapping = False
 
     def flap(self):
-        self.acceleration = 0
-        self.velocity = FLAP_STRENGTH
+        self.flapping = True
 
     def update(self):
         self.acceleration += GRAVITY
         self.velocity += self.acceleration
+
+        if self.flapping:
+            self.acceleration = 0
+            self.velocity = -FLAP_STRENGTH
+            self.flapping = False
+
+        self.velocity = min(18, self.velocity)
         self.rect.y += self.velocity
 
 
@@ -103,17 +110,19 @@ class Game:
     def _get_state(self):
         # State: [bird_y, bird_velocity, next_pipe_x, next_pipe_top, next_pipe_bottom]
         if len(self.pipes) > 0:
-            next_pipe = sorted(self.pipes, key=lambda p: p.rect.x)[0]  # Closest pipe
-            return np.array(
+            next_pipe = sorted(self.pipes, key=lambda p: p.rect.x)  # Closest pipe
+            s = np.array(
                 [
                     self.bird.rect.centery / SCREEN_HEIGHT,  # Normalized
                     self.bird.velocity / 10,  # Scaled
-                    (next_pipe.rect.centerx - self.bird.rect.centerx) / SCREEN_WIDTH,
-                    (next_pipe.rect.bottom - self.bird.rect.centery) / SCREEN_HEIGHT,
-                    (next_pipe.rect.top - self.bird.rect.centery) / SCREEN_HEIGHT,
+                    (next_pipe[0].rect.centerx - self.bird.rect.right) / SCREEN_WIDTH,
+                    (next_pipe[0].rect.bottom) / SCREEN_HEIGHT,
+                    (next_pipe[1].rect.top) / SCREEN_HEIGHT,
                 ],
                 dtype=np.float32,
             )
+            # print(s)
+            return s
         else:
             return np.zeros(5, dtype=np.float32)
 
