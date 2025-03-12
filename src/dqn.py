@@ -24,15 +24,18 @@ class Agent:
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=2000)  # Experience replay buffer
-        self.gamma = 0.99  # Discount factor
-        self.epsilon = 1.0  # Exploration rate
+        self.gamma = 0.99
+        self.epsilon = 1.0
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
+        self.alpha = 0.6  # Prioritization exponent
         self.model = DQN(state_size, action_size)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
     def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+        # Store new experiences with max priority (to ensure they get sampled)
+        max_priority = max([exp[0] for exp in self.memory], default=1.0)
+        self.memory.append((max_priority, state, action, reward, next_state, done))
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:
@@ -45,19 +48,48 @@ class Agent:
     def replay(self, batch_size):
         if len(self.memory) < batch_size:
             return
-        minibatch = random.sample(self.memory, batch_size)
-        for state, action, reward, next_state, done in minibatch:
+
+        # Calculate sampling probabilities
+        priorities = np.array([exp[0] for exp in self.memory])
+        probs = priorities**self.alpha
+        probs /= probs.sum()
+
+        # Select batch based on priorities
+        indices = np.random.choice(len(self.memory), size=batch_size, p=probs)
+        minibatch = [self.memory[i] for i in indices]
+
+        # Train and update priorities
+        for index, (priority, state, action, reward, next_state, done) in enumerate(
+            minibatch
+        ):
+            # Compute target and loss
             target = reward
             if not done:
                 next_state = torch.FloatTensor(next_state)
                 target = reward + self.gamma * torch.max(self.model(next_state)).item()
+
             state = torch.FloatTensor(state)
-            predicted_target = self.model(state)[action]
+            predicted = self.model(state)[action]
             loss = torch.nn.functional.mse_loss(
-                predicted_target, torch.tensor(target, dtype=torch.float)
+                predicted, torch.tensor(target, dtype=torch.float)
             )
+
+            # Backpropagation
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+
+            # Update priority with new error
+            error = abs(predicted.item() - target)
+            self.memory[indices[index]] = (
+                error,
+                state,
+                action,
+                reward,
+                next_state,
+                done,
+            )
+
+        # Decay epsilon
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay

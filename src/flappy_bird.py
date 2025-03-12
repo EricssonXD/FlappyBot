@@ -71,7 +71,7 @@ class Pipe(Sprite):
 
 
 class Game:
-    def __init__(self, training_mode=True):
+    def __init__(self, training_mode=False):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
         self.bird = Bird()
@@ -144,16 +144,26 @@ class Game:
         if gameover:
             reward += COLLISION_REWARD
         elif (
-            self.pipes.sprites()[0].rect.right < self.bird.rect.left
-            and not self.pipes.sprites()[0].passed
+            not self.pipes.sprites()[0].passed
+            and self.pipes.sprites()[0].rect.right < self.bird.rect.left
         ):
             self.pipes.sprites()[0].passed = True
             self.score += 1
             reward += PIPE_PASSED_REWARD  # Passed a pipe
+            if self.score > 100:
+                gameover = True  # Stop the game after 100 pipes
+                reward += 1000
 
         # Render if not in training mode
         if not self.training_mode:
             self.render()
+        # self.render()
+
+        if not self.training_mode:
+            # self.clock.tick(TRAINING_FPS)
+            self.clock.tick(GAME_FPS)
+        else:
+            self.clock.tick(TRAINING_FPS)
 
         return self._get_state(), reward, gameover
 
@@ -174,24 +184,29 @@ class Game:
 
         # Update display
         pygame.display.flip()
-        self.clock.tick(30)
+
+
+def gameLoop(game):
+    action = 0
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                action = 1
+    state, reward, done = game.step(action)
+    if done:
+        game.reset()
 
 
 def run():
     game = Game()
     while True:
-        action = 0
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    action = 1
-        state, reward, done = game.step(action)
-        game.render()
-        if done:
-            game.reset()
+        # start_time = time.time()
+        gameLoop(game)
+        # end_time = time.time()
+        # print(f"Step took: {end_time - start_time:.6f} seconds")
 
 
 if __name__ == "__main__":

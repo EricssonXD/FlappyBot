@@ -1,10 +1,8 @@
-# def main():
-#     flappy_bird.run()
+import os
 
-# # Test the game manually
-# if __name__ == "__main__":
-#     main()
-
+os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
+# import time
+import pygame
 import flappy_bird
 from dqn import Agent
 import torch
@@ -22,12 +20,16 @@ def train():
         done = False
 
         while not done:
+            # start_time = time.time()
             action = agent.act(state)
             next_state, reward, done = env.step(action)
             agent.remember(state, action, reward, next_state, done)
             state = next_state
             total_reward += reward
             agent.replay(batch_size)
+            pygame.event.pump()
+            # end_time = time.time()
+            # print(f"Step took: {end_time - start_time:.6f} seconds")
 
         print(f"Episode: {episode+1}, Score: {env.score}, Epsilon: {agent.epsilon:.2f}")
 
@@ -35,7 +37,7 @@ def train():
 
 
 def test():
-    env = flappy_bird.Game(training_mode=False)
+    env = flappy_bird.Game()
     agent = Agent(state_size=5, action_size=2)
     agent.model.load_state_dict(torch.load("models/flappy_dqn.pth"))
     agent.epsilon = 0.0  # Disable exploration
@@ -49,3 +51,5 @@ def test():
 
 if __name__ == "__main__":
     train()  # Switch to test() to see the trained AI
+    # test()
+    # flappy_bird.run()
