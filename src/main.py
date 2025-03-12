@@ -6,7 +6,7 @@ if TRAINING:
     os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
 
 
-# import time
+import time
 import pygame
 import flappy_bird
 from dqn import Agent
@@ -25,7 +25,7 @@ def train():
         done = False
 
         while not done:
-            # start_time = time.time()
+            start_time = time.time()
             action = agent.act(state)
             next_state, reward, done = env.step(action)
             agent.remember(state, action, reward, next_state, done)
@@ -33,8 +33,8 @@ def train():
             total_reward += reward
             agent.replay(batch_size)
             pygame.event.pump()
-            # end_time = time.time()
-            # print(f"Step took: {end_time - start_time:.6f} seconds")
+            end_time = time.time()
+            print(f"Step took: {end_time - start_time:.6f} seconds")
 
         print(f"Episode: {episode+1}, Score: {env.score}, Epsilon: {agent.epsilon:.2f}")
 
