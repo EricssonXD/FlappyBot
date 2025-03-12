@@ -16,8 +16,8 @@ import torch  # noqa: E402
 def train():
     env = flappy_bird.Game(training_mode=True)
     agent = Agent(state_size=STATE_SIZE, action_size=2)
-    episodes = 1000
-    batch_size = 64
+    episodes = 10000
+    batch_size = 32
 
     # Try to load checkpoint
     agent.load_checkpoint("checkpoint.pth")  # Load model, optimizer, and epsilon

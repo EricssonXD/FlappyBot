@@ -122,12 +122,28 @@ class Game:
                 + (self.bird.rect.centery - next_pipe[1].rect.top) ** 2
             )
 
+            try:
+                next_top_pipe2 = np.sqrt(
+                    (self.bird.rect.centerx - next_pipe[2].rect.centerx) ** 2
+                    + (self.bird.rect.centery - next_pipe[2].rect.bottom) ** 2
+                )
+
+                next_bottom_pipe2 = np.sqrt(
+                    (self.bird.rect.centerx - next_pipe[3].rect.centerx) ** 2
+                    + (self.bird.rect.centery - next_pipe[3].rect.top) ** 2
+                )
+            except:  # noqa: E722
+                next_top_pipe2 = PIPE_GAP
+                next_bottom_pipe2 = PIPE_GAP
+
             s = np.array(
                 [
                     self.bird.rect.centery / SCREEN_HEIGHT,  # Normalized
+                    self.bird.velocity / 10,  # Scaled
                     next_top_pipe / SCREEN_HEIGHT,  # Normalized
                     next_bottom_pipe / SCREEN_HEIGHT,  # Normalized
-                    self.bird.velocity / 10,  # Scaled
+                    next_top_pipe2 / SCREEN_HEIGHT,  # Normalized
+                    next_bottom_pipe2 / SCREEN_HEIGHT,  # Normalized
                     # (next_pipe[0].rect.centerx - self.bird.rect.right) / SCREEN_WIDTH,
                     # (next_pipe[0].rect.bottom) / SCREEN_HEIGHT,
                     # (next_pipe[1].rect.top) / SCREEN_HEIGHT,

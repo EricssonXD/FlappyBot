@@ -56,11 +56,6 @@ class Agent:
         except FileNotFoundError:
             print("No checkpoint found. Starting fresh.")
 
-    def remember(self, state, action, reward, next_state, done):
-        # Store new experiences with max priority (to ensure they get sampled)
-        max_priority = max([exp[0] for exp in self.memory], default=1.0)
-        self.memory.append((max_priority, state, action, reward, next_state, done))
-
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
@@ -69,17 +64,22 @@ class Agent:
             q_values = self.model(state)
         return torch.argmax(q_values).item()
 
+    def remember(self, state, action, reward, next_state, done):
+        # Initial priority: high for large rewards/errors (we'll update this later)
+        priority = 1.0  # Placeholder
+        self.memory.append((priority, state, action, reward, next_state, done))
+
     def replay(self, batch_size):
         if len(self.memory) < batch_size:
             return
 
-        # Calculate sampling probabilities
+        # Get priorities and calculate probabilities
         priorities = np.array([exp[0] for exp in self.memory])
-        probs = priorities**self.alpha
-        probs /= probs.sum()
+        probs = priorities**self.alpha  # Scale by alpha
+        probs /= probs.sum()  # Normalize to probabilities
 
-        # Select batch based on priorities
-        indices = np.random.choice(len(self.memory), size=batch_size, p=probs)
+        # Select experiences based on priority
+        indices = np.random.choice(len(self.memory), batch_size, p=probs)
         minibatch = [self.memory[i] for i in indices]
 
         # # Train and update priorities
