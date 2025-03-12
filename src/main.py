@@ -1,6 +1,11 @@
-import os
+TRAINING = True
 
-os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
+if TRAINING:
+    import os
+
+    os.environ["SDL_VIDEODRIVER"] = "dummy"  # Set before importing pygame
+
+
 # import time
 import pygame
 import flappy_bird
@@ -50,6 +55,9 @@ def test():
 
 
 if __name__ == "__main__":
-    train()  # Switch to test() to see the trained AI
-    # test()
-    # flappy_bird.run()
+    if TRAINING:
+        train()  # Switch to test() to see the trained AI
+        test()
+    else:
+        # test()
+        flappy_bird.run()
