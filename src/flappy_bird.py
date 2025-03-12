@@ -141,8 +141,10 @@ class Game:
         gameover = collision or out_of_bounds
 
         # Calculate reward
-        if gameover:
+        if collision:
             reward += COLLISION_REWARD
+        elif out_of_bounds:
+            reward += OUT_OF_BOUNDS_REWARD
         elif (
             not self.pipes.sprites()[0].passed
             and self.pipes.sprites()[0].rect.right < self.bird.rect.left

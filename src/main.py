@@ -17,7 +17,10 @@ def train():
     env = flappy_bird.Game(training_mode=True)
     agent = Agent(state_size=5, action_size=2)
     episodes = 1000
-    batch_size = 32
+    batch_size = 128
+
+    agent.load_checkpoint("checkpoint.pth")  # Load model, optimizer, and epsilon
+    # agent.load_checkpoint("flappy_dqn_gen0.pth")  # Load model, optimizer, and epsilon
 
     for episode in range(episodes):
         state = env.reset()
@@ -25,7 +28,7 @@ def train():
         done = False
 
         while not done:
-            start_time = time.time()
+            # start_time = time.time()
             action = agent.act(state)
             next_state, reward, done = env.step(action)
             agent.remember(state, action, reward, next_state, done)
@@ -33,10 +36,14 @@ def train():
             total_reward += reward
             agent.replay(batch_size)
             pygame.event.pump()
-            end_time = time.time()
-            print(f"Step took: {end_time - start_time:.6f} seconds")
+            # end_time = time.time()
+            # print(f"Step took: {end_time - start_time:.6f} seconds")
 
         print(f"Episode: {episode+1}, Score: {env.score}, Epsilon: {agent.epsilon:.2f}")
+
+        # Save checkpoint every 50 episodes
+        if (episode + 1) % 50 == 0:
+            agent.save_checkpoint("checkpoint.pth")
 
     torch.save(agent.model.state_dict(), "models/flappy_dqn.pth")
 
@@ -44,7 +51,8 @@ def train():
 def test():
     env = flappy_bird.Game()
     agent = Agent(state_size=5, action_size=2)
-    agent.model.load_state_dict(torch.load("models/flappy_dqn.pth"))
+    # agent.model.load_state_dict(torch.load("models/flappy_dqn.pth"))
+    agent.load_checkpoint("checkpoint.pth")  # Load model, optimizer, and epsilon
     agent.epsilon = 0.0  # Disable exploration
 
     state = env.reset()
@@ -59,5 +67,5 @@ if __name__ == "__main__":
         train()  # Switch to test() to see the trained AI
         test()
     else:
-        # test()
-        flappy_bird.run()
+        test()
+        # flappy_bird.run()
