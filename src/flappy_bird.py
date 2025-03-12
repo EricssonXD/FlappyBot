@@ -4,15 +4,7 @@ import random
 import numpy as np
 from pygame.sprite import Sprite, Group
 import os
-
-# Constants
-SCREEN_WIDTH = 400
-SCREEN_HEIGHT = 600
-GRAVITY = 0.08
-FLAP_STRENGTH = -9
-PIPE_SPEED = 6
-PIPE_GAP = 150
-PIPE_SPACING = 200  # Distance between pipes
+from config import *
 
 # Colors
 WHITE = (255, 255, 255)
@@ -124,9 +116,12 @@ class Game:
             return np.zeros(5, dtype=np.float32)
 
     def step(self, action):
+        reward = SURVIVAL_REWARD  # Survival reward
+
         # Action: 0 = no flap, 1 = flap
         if action == 1:
             self.bird.flap()
+            reward += FLAP_REWARD  # Reduces reward for flapping
 
         # Update sprites
         self.all_sprites.update()
@@ -144,16 +139,15 @@ class Game:
         gameover = collision or out_of_bounds
 
         # Calculate reward
-        reward = 0.1  # Survival reward
         if gameover:
-            reward = -1000
+            reward += COLLISION_REWARD
         elif (
             self.pipes.sprites()[0].rect.right < self.bird.rect.left
             and not self.pipes.sprites()[0].passed
         ):
             self.pipes.sprites()[0].passed = True
             self.score += 1
-            reward = 10  # Passed a pipe
+            reward += PIPE_PASSED_REWARD  # Passed a pipe
 
         # Render if not in training mode
         if not self.training_mode:
@@ -162,15 +156,21 @@ class Game:
         return self._get_state(), reward, gameover
 
     def render(self):
+
+        # First draw the background
+        self.screen.fill(SKY_BLUE)
+
+        # Draw the pipes and the bird
+        self.all_sprites.draw(self.screen)
+
+        # Draw the score
         score_text = font.render(f"{self.score}", False, BLACK)
         score_text_rect = score_text.get_rect()
         score_text_rect.centerx = self.screen.get_rect().centerx
         score_text_rect.top = 10
-
-        self.screen.fill(SKY_BLUE)
-        self.all_sprites.draw(self.screen)
         self.screen.blit(score_text, score_text_rect)
 
+        # Update display
         pygame.display.flip()
         self.clock.tick(30)
 
