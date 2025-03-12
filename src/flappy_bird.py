@@ -15,8 +15,10 @@ YELLOW = (255, 255, 0)
 BLACK = (0, 0, 0)
 
 pygame.init()
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 font_path = os.path.join(BASE_DIR, "..", "assets", "fonts", "flappy-font.ttf")
+# font_path = "assets/fonts/flappy-font.ttf"  # This works only if you run the script from the root directory
 font = pygame.font.Font(font_path, 48)
 
 # pygame.font.init()  # you have to call this at the start,
