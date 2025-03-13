@@ -4,9 +4,12 @@ import torch.optim as optim
 import numpy as np
 from collections import deque
 import random
+import matplotlib.pyplot as plt
+from dqn import DQN
 
 from config import (
     BATCH_SIZE,
+    EPISODE_STOP_REWARD,
     EPSILON_DECAY,
     EPSILON_START,
     EPSILON_MIN,
@@ -14,7 +17,9 @@ from config import (
     LEARNING_RATE,
     NETWORK_SYNC_FREQ,
 )
-from dqn import DQN
+import datetime
+
+# import time
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -85,23 +90,40 @@ class Agent:
     def tensor(self, state, dtype=torch.float):
         return torch.tensor(state, dtype=dtype, device=device)
 
+    def plot(self, rewards_per_episode, epsilon_per_episode):
+
+        fig, axs = plt.subplots(2, 1, figsize=(8, 10))
+
+        axs[0].plot(rewards_per_episode)
+        axs[0].set(xlabel="Episode", ylabel="Reward", title="Reward per episode")
+
+        axs[1].plot(epsilon_per_episode)
+        axs[1].set(xlabel="Episode", ylabel="Epsilon", title="Epsilon per episode")
+
+        # fig.tight_layout()
+        fig.savefig("metrics.png")
+        plt.close(fig)
+
     def train(self, env):
         self.epsilon = EPSILON_START
 
+        best_reward = -np.inf
+
         for episode in itertools.count():
+            # start_time = time.time()
             terminated = False
-            total_reward = 0
+            episode_reward = 0
 
             state = env.reset()
             state = self.tensor(state)
 
             step_counter = 0
 
-            while not terminated:
+            while not terminated and episode_reward < EPISODE_STOP_REWARD:
                 action = self.act(state)
 
                 next_state, reward, terminated = env.step(action.item())
-                total_reward += reward
+                episode_reward += reward
 
                 next_state = self.tensor(next_state)
                 reward = self.tensor(reward)
@@ -112,14 +134,13 @@ class Agent:
 
                 state = next_state
 
-                # Update the target network every 10 episodes
-
             self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)
 
-            self.history_rewards.append(total_reward)
+            self.history_rewards.append(episode_reward)
             self.history_epsilon.append(self.epsilon)
 
-            # self.replay(BATCH_SIZE)
+            if episode % 100 == 0:
+                self.plot(self.history_rewards, self.history_epsilon)
 
             if len(self.memory) > BATCH_SIZE:
 
@@ -131,8 +152,15 @@ class Agent:
                     self.target_model.load_state_dict(self.model.state_dict())
                     step_counter = 0
 
-            print(
-                f"Episode: {episode+1}, Score: {env.score}, Epsilon: {self.epsilon:.2f}"
-            )
+            if episode_reward > best_reward:
+                log_message = f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Episode: {episode+1}, Reward: {episode_reward}, Score: {env.score}"
+                print(log_message)
 
+                with open("logs.txt", "a") as f:
+                    f.write(log_message + "\n")
+
+                torch.save(self.model.state_dict(), "models/flappy_dqn.pth")
+                best_reward = episode_reward
+            # end_time = time.time()
+            # print(f"Time taken: {end_time - start_time} seconds")
         # torch.save(agent.model.state_dict(), "models/flappy_dqn.pth")
