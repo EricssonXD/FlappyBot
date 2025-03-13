@@ -187,6 +187,9 @@ class Game:
         if self.render_game:
             self.render()
 
+        if self.training_mode:
+            pygame.event.pump()
+
         return self._get_state(), reward, gameover
 
     def render(self):

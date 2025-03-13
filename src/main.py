@@ -1,11 +1,3 @@
-# def main():
-#     flappy_bird.run()
-
-# # Test the game manually
-# if __name__ == "__main__":
-#     main()
-
-import itertools
 from agent import Agent
 from config import ACTION_SIZE, STATE_SIZE
 import flappy_bird
