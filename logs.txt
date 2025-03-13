@@ -19,3 +19,17 @@
 2025-03-14 01:13:00 - Episode: 1673, Reward: 140, Score: 4
 2025-03-14 01:14:31 - Episode: 2430, Reward: 220, Score: 6
 2025-03-14 01:20:26 - Episode: 4983, Reward: 314, Score: 8
+2025-03-14 01:36:59 - Episode: 1, Reward: -57, Score: 0
+2025-03-14 01:37:00 - Episode: 11, Reward: -56, Score: 0
+2025-03-14 01:37:00 - Episode: 13, Reward: -53, Score: 0
+2025-03-14 01:37:00 - Episode: 20, Reward: -50, Score: 0
+2025-03-14 01:37:05 - Episode: 112, Reward: -44, Score: 0
+2025-03-14 01:37:08 - Episode: 156, Reward: -35, Score: 0
+2025-03-14 01:37:12 - Episode: 206, Reward: -31, Score: 0
+2025-03-14 01:37:18 - Episode: 270, Reward: 4, Score: 1
+2025-03-14 01:37:22 - Episode: 317, Reward: 13, Score: 1
+2025-03-14 01:37:23 - Episode: 335, Reward: 44, Score: 2
+2025-03-14 01:37:41 - Episode: 541, Reward: 51, Score: 2
+2025-03-14 01:37:50 - Episode: 623, Reward: 88, Score: 3
+2025-03-14 01:38:00 - Episode: 707, Reward: 132, Score: 4
+2025-03-14 01:38:05 - Episode: 758, Reward: 135, Score: 4

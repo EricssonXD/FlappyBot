@@ -1,5 +1,6 @@
 from agent import Agent
 from config import ACTION_SIZE, STATE_SIZE
+from dqn import DQN
 import flappy_bird
 import torch
 
@@ -12,17 +13,18 @@ def train():
 
 def test():
     env = flappy_bird.Game(training_mode=False)
-    agent = Agent(state_size=STATE_SIZE, action_size=ACTION_SIZE)
-    agent.model.load_state_dict(torch.load("models/flappy_dqn.pth"))
-    agent.epsilon = 0.0  # Disable exploration
+    model = DQN(STATE_SIZE, ACTION_SIZE)
+    model.load_state_dict(torch.load("models/flappy_dqn.pth"))
+    model.eval()
 
     while True:
         state = env.reset()
-        state = agent.tensor(state)
         terminated = False
         while not terminated:
-            action = agent.act(state)
-            _, _, terminated = env.step(action.item())
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                action = model(state_tensor).argmax().item()
+            state, _, terminated = env.step(action)
 
 
 def play():
