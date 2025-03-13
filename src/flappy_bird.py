@@ -203,8 +203,8 @@ def run():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     action = 1
-        state, reward, done = game.step(action)
-        if done:
+        state, reward, terminated = game.step(action)
+        if terminated:
             game.reset()
 
 
