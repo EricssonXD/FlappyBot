@@ -71,7 +71,7 @@ class Pipe(Sprite):
 
 
 class Game:
-    def __init__(self, training_mode=True):
+    def __init__(self, training_mode=True, render_game=True):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
         self.bird = Bird()
@@ -80,6 +80,7 @@ class Game:
         self.all_sprites.add(self.bird)
         self.score = 0
         self.training_mode = training_mode  # Disable rendering for faster training
+        self.render_game = render_game
 
     def reset(self):
         self.all_sprites.empty()
@@ -103,14 +104,26 @@ class Game:
     def _get_state(self):
         # State: [bird_y, bird_velocity, next_pipe_x, next_pipe_top, next_pipe_bottom]
         if len(self.pipes) > 0:
-            next_pipe = sorted(self.pipes, key=lambda p: p.rect.x)[0]  # Closest pipe
+            pipes = sorted(self.pipes, key=lambda p: p.rect.x)  # Closest pipe
+
+            try:
+                nnp = (pipes[2].rect.centerx - self.bird.rect.centerx) / SCREEN_WIDTH
+                nnpb = (pipes[2].rect.bottom - self.bird.rect.centery) / SCREEN_HEIGHT
+                nnpt = (pipes[3].rect.top - self.bird.rect.centery) / SCREEN_HEIGHT
+            except IndexError:
+                nnp = 1
+                nnpb = 1
+                nnpt = -1
+
             return np.array(
                 [
-                    self.bird.rect.centery / SCREEN_HEIGHT,  # Normalized
                     self.bird.velocity / 10,  # Scaled
-                    (next_pipe.rect.centerx - self.bird.rect.centerx) / SCREEN_WIDTH,
-                    (next_pipe.rect.bottom - self.bird.rect.centery) / SCREEN_HEIGHT,
-                    (next_pipe.rect.top - self.bird.rect.centery) / SCREEN_HEIGHT,
+                    (pipes[0].rect.centerx - self.bird.rect.centerx) / SCREEN_WIDTH,
+                    (pipes[0].rect.bottom - self.bird.rect.centery) / SCREEN_HEIGHT,
+                    (pipes[1].rect.top - self.bird.rect.centery) / SCREEN_HEIGHT,
+                    nnp,
+                    nnpb,
+                    nnpt,
                 ],
                 dtype=np.float32,
             )
@@ -143,6 +156,8 @@ class Game:
         # Calculate reward
         if gameover:
             reward += COLLISION_REWARD
+        elif out_of_bounds:
+            reward += OUT_OF_BOUNDS_REWARD
         elif (
             self.pipes.sprites()[0].rect.right < self.bird.rect.left
             and not self.pipes.sprites()[0].passed
@@ -152,7 +167,7 @@ class Game:
             reward += PIPE_PASSED_REWARD  # Passed a pipe
 
         # Render if not in training mode
-        if not self.training_mode:
+        if self.render_game:
             self.render()
 
         return self._get_state(), reward, gameover
@@ -189,7 +204,6 @@ def run():
                 if event.key == pygame.K_SPACE:
                     action = 1
         state, reward, done = game.step(action)
-        game.render()
         if done:
             game.reset()
 

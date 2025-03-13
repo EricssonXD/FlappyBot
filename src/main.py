@@ -48,4 +48,5 @@ def test():
 
 
 if __name__ == "__main__":
-    train()  # Switch to test() to see the trained AI
+    # train()  # Switch to test() to see the trained AI
+    flappy_bird.run()
