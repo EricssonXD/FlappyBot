@@ -4,7 +4,21 @@ import random
 import numpy as np
 from pygame.sprite import Sprite, Group
 import os
-from config import *
+
+from config import (
+    COLLISION_REWARD,
+    FLAP_REWARD,
+    FLAP_STRENGTH,
+    GRAVITY,
+    OUT_OF_BOUNDS_REWARD,
+    PIPE_GAP,
+    PIPE_PASSED_REWARD,
+    PIPE_SPACING,
+    PIPE_SPEED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    SURVIVAL_REWARD,
+)
 
 # Colors
 WHITE = (255, 255, 255)
@@ -37,7 +51,7 @@ class Bird(Sprite):
 
     def flap(self):
         self.acceleration = 0
-        self.velocity = FLAP_STRENGTH
+        self.velocity = -FLAP_STRENGTH
 
     def update(self):
         self.acceleration += GRAVITY

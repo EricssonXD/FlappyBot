@@ -15,25 +15,7 @@ import torch
 def train():
     env = flappy_bird.Game(training_mode=True)
     agent = Agent(state_size=STATE_SIZE, action_size=ACTION_SIZE)
-
-    batch_size = 32
-
-    for episode in itertools.count():
-        state = env.reset()
-        terminated = False
-        total_reward = 0
-
-        while not terminated:
-            action = agent.act(state)
-            next_state, reward, terminated = env.step(action)
-            agent.remember(state, action, reward, next_state, terminated)
-            state = next_state
-            total_reward += reward
-            agent.replay(batch_size)
-
-        print(f"Episode: {episode+1}, Score: {env.score}, Epsilon: {agent.epsilon:.2f}")
-
-    # torch.save(agent.model.state_dict(), "models/flappy_dqn.pth")
+    agent.train(env=env)
 
 
 def test():
