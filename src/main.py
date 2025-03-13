@@ -16,11 +16,13 @@ def test():
     agent.model.load_state_dict(torch.load("models/flappy_dqn.pth"))
     agent.epsilon = 0.0  # Disable exploration
 
-    state = env.reset()
-    terminated = False
-    while not terminated:
-        action = agent.act(state)
-        state, _, terminated = env.step(action)
+    while True:
+        state = env.reset()
+        state = agent.tensor(state)
+        terminated = False
+        while not terminated:
+            action = agent.act(state)
+            _, _, terminated = env.step(action.item())
 
 
 def play():
