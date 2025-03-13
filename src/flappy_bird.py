@@ -165,7 +165,10 @@ class Game:
         # Check collisions
         collision = pygame.sprite.spritecollideany(self.bird, self.pipes)
         out_of_bounds = self.bird.rect.top < 0 or self.bird.rect.bottom > SCREEN_HEIGHT
-        gameover = collision or out_of_bounds
+        if collision or out_of_bounds:
+            gameover = True
+        else:
+            gameover = False
 
         # Calculate reward
         if gameover:
@@ -203,7 +206,11 @@ class Game:
 
         # Update display
         pygame.display.flip()
-        self.clock.tick(30)
+
+        if self.training_mode:
+            self.clock.tick(9999)
+        else:
+            self.clock.tick(30)
 
 
 def run():
