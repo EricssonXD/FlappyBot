@@ -43,3 +43,5 @@ I lowered epsilon again to `0.001`
 
 I then again lowered epsilon to `0.0001` and lowered decay rate to `0.9995`
 Because I keep lowering the epsilon, I think I should try to implement `Noisy Networks`
+
+I ended up using the implementation from the thomashirtz's github repo https://github.com/thomashirtz/noisy-networks

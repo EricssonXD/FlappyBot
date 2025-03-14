@@ -19,7 +19,9 @@ from .config import (
     MODEL_DIR,
     TARGET_UPDATE_FREQ,
     USE_DOUBLE_DQN,
+    USE_DUELING_DQN,
     USE_GPU,
+    USE_NOISY_NET,
 )
 import datetime
 import time
@@ -44,8 +46,20 @@ class Agent:
         self.epsilon: float = EPSILON_START  # Exploration rate
         self.epsilon_min: float = EPSILON_MIN
         self.epsilon_decay: float = EPSILON_DECAY
-        self.model: DQN = DQN(state_size, action_size).to(device)
-        self.target_model: DQN = DQN(state_size, action_size).to(device)
+        self.model: DQN = DQN(
+            state_size,
+            action_size,
+            use_dueling=USE_DUELING_DQN,
+            use_noisy_net=USE_NOISY_NET,
+            device=device,
+        ).to(device)
+        self.target_model: DQN = DQN(
+            state_size,
+            action_size,
+            use_dueling=USE_DUELING_DQN,
+            use_noisy_net=USE_NOISY_NET,
+            device=device,
+        ).to(device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
         self.loss_fn = torch.nn.MSELoss()
         self.best_reward: float = -np.inf
@@ -98,13 +112,20 @@ class Agent:
 
         Outputs an action in the form of a tensor
         """
-        if np.random.rand() <= self.epsilon:
-            action = random.randrange(self.action_size)
-            action = self.tensor(action, dtype=torch.int64)
-        else:
+
+        if USE_NOISY_NET:
             with torch.no_grad():
                 action = self.model(state.unsqueeze(dim=0)).squeeze().argmax()
-        return action
+                return action
+        else:
+            # Greedy-Epsilon strategy
+            if np.random.rand() <= self.epsilon:
+                action = random.randrange(self.action_size)
+                action = self.tensor(action, dtype=torch.int64)
+            else:
+                with torch.no_grad():
+                    action = self.model(state.unsqueeze(dim=0)).squeeze().argmax()
+            return action
 
     def optimize(self, minibatch: list, model: DQN, target_model: DQN) -> None:
         """Optimizing the model"""
