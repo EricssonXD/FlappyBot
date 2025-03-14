@@ -1,4 +1,5 @@
 import itertools
+import os
 import torch
 import torch.optim as optim
 import numpy as np
@@ -15,6 +16,7 @@ from config import (
     EPSILON_MIN,
     DISCOUNT_FACTOR,
     LEARNING_RATE,
+    LOG_DIR,
     TARGET_UPDATE_FREQ,
     USE_DOUBLE_DQN,
 )
@@ -24,6 +26,10 @@ import time
 
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
+
+# mkdir LOG_DIR
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
 
 
 class Agent:
@@ -130,7 +136,7 @@ class Agent:
         )
 
         # fig.tight_layout()
-        fig.savefig("metrics.png")
+        fig.savefig(f"{LOG_DIR}/metrics.png")
         plt.close(fig)
 
     def test(self, env):
@@ -211,7 +217,7 @@ class Agent:
                 log_message = f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Episode: {episode+1}, Reward: {episode_reward}, Score: {env.score}"
                 print(log_message)
 
-                with open("logs.txt", "a") as f:
+                with open(f"{LOG_DIR}/logs.txt", "a") as f:
                     f.write(log_message + "\n")
 
                 torch.save(self.model.state_dict(), "models/flappy_dqn.pth")

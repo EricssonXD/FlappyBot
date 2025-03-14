@@ -48,10 +48,30 @@
 		"version": "0.2.0",
 		"configurations": [
 			{
-				"name": "Python: main.py",
+				"name": "Main",
 				"type": "debugpy",
 				"request": "launch",
 				"program": "${workspaceFolder}/src/main.py",
+				"console": "integratedTerminal"
+			},
+			{
+				"name": "Train",
+				"type": "debugpy",
+				"request": "launch",
+				"program": "${workspaceFolder}/src/main.py",
+				"args": [
+					"train"
+				],
+				"console": "integratedTerminal"
+			},
+			{
+				"name": "Test",
+				"type": "debugpy",
+				"request": "launch",
+				"program": "${workspaceFolder}/src/main.py",
+				"args": [
+					"test"
+				],
 				"console": "integratedTerminal"
 			}
 
