@@ -19,13 +19,16 @@ from .config import (
     MODEL_DIR,
     TARGET_UPDATE_FREQ,
     USE_DOUBLE_DQN,
+    USE_GPU,
 )
 import datetime
 import time
 
 
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if not USE_GPU:
+    device = torch.device("cpu")
+print(f"Using device: {device} to train the model")
 
 # mkdir LOG_DIR
 if not os.path.exists(LOG_DIR):
