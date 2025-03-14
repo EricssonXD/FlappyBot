@@ -9,6 +9,7 @@ from .config import (
     COLLISION_REWARD,
     FLAP_REWARD,
     FLAP_STRENGTH,
+    GAME_FPS,
     GRAVITY,
     OUT_OF_BOUNDS_REWARD,
     PIPE_GAP,
@@ -18,6 +19,7 @@ from .config import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     SURVIVAL_REWARD,
+    TRAINING_FPS,
 )
 
 # Colors
@@ -214,9 +216,9 @@ class Game:
         pygame.display.flip()
 
         if self.training_mode:
-            self.clock.tick(9999)
+            self.clock.tick(TRAINING_FPS)
         else:
-            self.clock.tick(30)
+            self.clock.tick(GAME_FPS)
 
 
 def run():
