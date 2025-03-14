@@ -178,7 +178,9 @@ class Agent:
                 )
                 self.history_score_avg.append(average_score)
 
-                self.plot(self.history_rewards, self.history_epsilon, average_score)
+                self.plot(
+                    self.history_rewards, self.history_epsilon, self.history_score_avg
+                )
                 starttime = time.time()
 
             if len(self.memory) > BATCH_SIZE:

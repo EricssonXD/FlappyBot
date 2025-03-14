@@ -2,6 +2,7 @@ from agent import Agent
 from config import ACTION_SIZE, STATE_SIZE
 from dqn import DQN
 import flappy_bird
+import pygame
 import torch
 
 
@@ -21,6 +22,7 @@ def test():
         state = env.reset()
         terminated = False
         while not terminated:
+            pygame.event.pump()
             state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
             with torch.no_grad():
                 action = model(state_tensor).argmax().item()
