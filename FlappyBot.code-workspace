@@ -51,14 +51,14 @@
 				"name": "Main",
 				"type": "debugpy",
 				"request": "launch",
-				"program": "${workspaceFolder}/src/main.py",
+				"module": "src.main",
 				"console": "integratedTerminal"
 			},
 			{
 				"name": "New Train",
 				"type": "debugpy",
 				"request": "launch",
-				"program": "${workspaceFolder}/src/main.py",
+				"module": "src.main",
 				"args": [
 					"train"
 				],
@@ -68,7 +68,7 @@
 				"name": "Train",
 				"type": "debugpy",
 				"request": "launch",
-				"program": "${workspaceFolder}/src/main.py",
+				"module": "src.main",
 				"args": [
 					"train_continue"
 				],
@@ -78,7 +78,7 @@
 				"name": "Test",
 				"type": "debugpy",
 				"request": "launch",
-				"program": "${workspaceFolder}/src/main.py",
+				"module": "src.main",
 				"args": [
 					"test"
 				],

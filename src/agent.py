@@ -5,8 +5,8 @@ import numpy as np
 from collections import deque
 import random
 import matplotlib.pyplot as plt
-from dqn import DQN
-from config import (
+from .dqn import DQN
+from .config import (
     BATCH_SIZE,
     EPISODE_STOP_REWARD,
     EPSILON_DECAY,

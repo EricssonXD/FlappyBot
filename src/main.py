@@ -1,7 +1,7 @@
 import sys
-from agent import Agent
-from config import ACTION_SIZE, STATE_SIZE
-import flappy_bird
+from .agent import Agent
+from .config import ACTION_SIZE, STATE_SIZE
+from . import flappy_bird
 
 
 def agent(train: bool = False, load_checkpoint: bool = False):

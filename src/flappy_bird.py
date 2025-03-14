@@ -5,7 +5,7 @@ import numpy as np
 from pygame.sprite import Sprite, Group
 import os
 
-from config import (
+from .config import (
     COLLISION_REWARD,
     FLAP_REWARD,
     FLAP_STRENGTH,
