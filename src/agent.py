@@ -1,4 +1,3 @@
-import itertools
 import os
 import torch
 import torch.optim as optim
@@ -7,7 +6,6 @@ from collections import deque
 import random
 import matplotlib.pyplot as plt
 from dqn import DQN
-
 from config import (
     BATCH_SIZE,
     EPISODE_STOP_REWARD,
@@ -152,6 +150,7 @@ class Agent:
         rewards_per_episode: list,
         epsilon_per_episode: list,
         average_score_per_100_episode: list,
+        display: bool = False,
     ):
 
         fig, axs = plt.subplots(4, 1, figsize=(8, 10))
@@ -173,9 +172,22 @@ class Agent:
             title="Mean Score per 100 Episodes",
         )
 
+        if display:
+            plt.show(block=True)
+            return
+
         # fig.tight_layout()
         fig.savefig(f"{LOG_DIR}/metrics.png")
         plt.close(fig)
+
+    def display_chckpoint(self, filename=f"{MODEL_DIR}/checkpoint.pth"):
+        self.load_checkpoint(filename=filename)
+        self.plot(
+            self.history_rewards,
+            self.history_epsilon,
+            self.history_score_avg,
+            display=True,
+        )
 
     def test(self, env):
         model = self.model
