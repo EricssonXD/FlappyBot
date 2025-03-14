@@ -77,6 +77,7 @@ class Agent:
         try:
             checkpoint = torch.load(filename)
             self.model.load_state_dict(checkpoint["model_state"])
+            self.target_model.load_state_dict(checkpoint["model_state"])
             self.optimizer.load_state_dict(checkpoint["optimizer_state"])
             self.epsilon = checkpoint["epsilon"]
             self.best_reward = checkpoint["best_reward"]
