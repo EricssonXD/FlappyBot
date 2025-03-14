@@ -17,6 +17,7 @@ from config import (
     DISCOUNT_FACTOR,
     LEARNING_RATE,
     LOG_DIR,
+    MODEL_DIR,
     TARGET_UPDATE_FREQ,
     USE_DOUBLE_DQN,
 )
@@ -44,6 +45,9 @@ class Agent:
         self.model: DQN = DQN(state_size, action_size).to(device)
         self.target_model: DQN = DQN(state_size, action_size).to(device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
+        self.loss_fn = torch.nn.MSELoss()
+        self.best_reward: float = -np.inf
+        self.episode = 0
 
         self.history_rewards: list = []
         self.history_epsilon: list = []
@@ -52,6 +56,38 @@ class Agent:
 
     def remember(self, state, action, reward, next_state, terminated):
         self.memory.append((state, action, reward, next_state, terminated))
+
+    def save_checkpoint(self, filename=f"{MODEL_DIR}/checkpoint.pth"):
+        # Save model + optimizer + exploration rate
+        checkpoint = {
+            "model_state": self.model.state_dict(),
+            "optimizer_state": self.optimizer.state_dict(),
+            "epsilon": self.epsilon,
+            "best_reward": self.best_reward,
+            "history_rewards": self.history_rewards,
+            "history_epsilon": self.history_epsilon,
+            "history_score": self.history_score,
+            "history_score_avg": self.history_score_avg,
+            "episode": self.episode,
+        }
+        torch.save(checkpoint, filename)
+        print(f"Checkpoint saved to {filename}")
+
+    def load_checkpoint(self, filename=f"{MODEL_DIR}/checkpoint.pth"):
+        try:
+            checkpoint = torch.load(filename)
+            self.model.load_state_dict(checkpoint["model_state"])
+            self.optimizer.load_state_dict(checkpoint["optimizer_state"])
+            self.epsilon = checkpoint["epsilon"]
+            self.best_reward = checkpoint["best_reward"]
+            self.history_rewards = checkpoint["history_rewards"]
+            self.history_epsilon = checkpoint["history_epsilon"]
+            self.history_score = checkpoint["history_score"]
+            self.history_score_avg = checkpoint["history_score_avg"]
+            self.episode = checkpoint["episode"]
+            print(f"Loaded checkpoint from {filename}")
+        except FileNotFoundError:
+            print("No checkpoint found. Starting fresh.")
 
     def act(self, state: torch.Tensor) -> torch.Tensor:
         """
@@ -100,7 +136,7 @@ class Agent:
             model(states).gather(dim=1, index=actions.unsqueeze(dim=1)).squeeze()
         )
 
-        loss = torch.nn.functional.mse_loss(current_q, target_q)
+        loss = self.loss_fn(current_q, target_q)
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -153,14 +189,21 @@ class Agent:
                     action = model(state_tensor).argmax().item()
                 state, _, terminated = env.step(action)
 
-    def train(self, env):
+    def train(self, env, load_checkpoint=False, epsilon=None):
         self.epsilon = EPSILON_START
+        self.best_reward = -np.inf
 
-        best_reward = -np.inf
+        if load_checkpoint:
+            self.load_checkpoint()
+        if epsilon:
+            self.epsilon = epsilon
 
         starttime = time.time()
 
-        for episode in itertools.count():
+        while True:
+            episode = self.episode
+            self.episode += 1
+
             terminated = False
             episode_reward = 0
 
@@ -203,6 +246,10 @@ class Agent:
                 )
                 starttime = time.time()
 
+            # Save checkpoint every 1000 episodes
+            if episode % 1000 == 0:
+                self.save_checkpoint()
+
             if len(self.memory) > BATCH_SIZE:
 
                 minibatch = random.sample(self.memory, BATCH_SIZE)
@@ -213,12 +260,12 @@ class Agent:
                     self.target_model.load_state_dict(self.model.state_dict())
                     step_counter = 0
 
-            if episode_reward > best_reward:
-                log_message = f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Episode: {episode+1}, Reward: {episode_reward}, Score: {env.score}"
+            if episode_reward > self.best_reward:
+                log_message = f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Episode: {episode + 1}, Reward: {episode_reward}, Score: {env.score}"
                 print(log_message)
 
                 with open(f"{LOG_DIR}/logs.txt", "a") as f:
                     f.write(log_message + "\n")
 
                 torch.save(self.model.state_dict(), "models/flappy_dqn.pth")
-                best_reward = episode_reward
+                self.best_reward = episode_reward

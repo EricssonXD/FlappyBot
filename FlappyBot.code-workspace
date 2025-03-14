@@ -55,12 +55,22 @@
 				"console": "integratedTerminal"
 			},
 			{
-				"name": "Train",
+				"name": "New Train",
 				"type": "debugpy",
 				"request": "launch",
 				"program": "${workspaceFolder}/src/main.py",
 				"args": [
 					"train"
+				],
+				"console": "integratedTerminal"
+			},
+			{
+				"name": "Train",
+				"type": "debugpy",
+				"request": "launch",
+				"program": "${workspaceFolder}/src/main.py",
+				"args": [
+					"train_continue"
 				],
 				"console": "integratedTerminal"
 			},
