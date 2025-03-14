@@ -17,6 +17,7 @@ from config import (
     DISCOUNT_FACTOR,
     LEARNING_RATE,
     LOG_DIR,
+    MEMORY_SIZE,
     MODEL_DIR,
     TARGET_UPDATE_FREQ,
     USE_DOUBLE_DQN,
@@ -37,7 +38,7 @@ class Agent:
     def __init__(self, state_size: int, action_size: int):
         self.state_size: int = state_size
         self.action_size: int = action_size
-        self.memory: deque = deque([], maxlen=5000)  # Experience replay buffer
+        self.memory: deque = deque([], maxlen=MEMORY_SIZE)  # Experience replay buffer
         self.gamma: float = DISCOUNT_FACTOR  # Discount factor
         self.epsilon: float = EPSILON_START  # Exploration rate
         self.epsilon_min: float = EPSILON_MIN
