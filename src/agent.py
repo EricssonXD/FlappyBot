@@ -13,39 +13,41 @@ from config import (
     EPSILON_DECAY,
     EPSILON_START,
     EPSILON_MIN,
-    GAMMA,
+    DISCOUNT_FACTOR,
     LEARNING_RATE,
-    NETWORK_SYNC_FREQ,
+    TARGET_UPDATE_FREQ,
+    USE_DOUBLE_DQN,
 )
 import datetime
+import time
 
-# import time
 
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# device = torch.device("cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 
 class Agent:
-    def __init__(self, state_size, action_size):
-        self.state_size = state_size
-        self.action_size = action_size
-        self.memory = deque([], maxlen=5000)  # Experience replay buffer
-        self.gamma = GAMMA  # Discount factor
-        self.epsilon = EPSILON_START  # Exploration rate
-        self.epsilon_min = EPSILON_MIN
-        self.epsilon_decay = EPSILON_DECAY
-        self.model = DQN(state_size, action_size).to(device)
-        self.target_model = DQN(state_size, action_size).to(device)
+    def __init__(self, state_size: int, action_size: int):
+        self.state_size: int = state_size
+        self.action_size: int = action_size
+        self.memory: deque = deque([], maxlen=5000)  # Experience replay buffer
+        self.gamma: float = DISCOUNT_FACTOR  # Discount factor
+        self.epsilon: float = EPSILON_START  # Exploration rate
+        self.epsilon_min: float = EPSILON_MIN
+        self.epsilon_decay: float = EPSILON_DECAY
+        self.model: DQN = DQN(state_size, action_size).to(device)
+        self.target_model: DQN = DQN(state_size, action_size).to(device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
 
-        self.history_rewards = []
-        self.history_epsilon = []
+        self.history_rewards: list = []
+        self.history_epsilon: list = []
+        self.history_score: list = []
+        self.history_score_avg: list = []
 
     def remember(self, state, action, reward, next_state, terminated):
         self.memory.append((state, action, reward, next_state, terminated))
 
-    def act(self, state):
+    def act(self, state: torch.Tensor) -> torch.Tensor:
         """
         State must be a tensor
 
@@ -70,12 +72,23 @@ class Agent:
         terminations = torch.tensor(terminations).float().to(device)
 
         with torch.no_grad():
-            target_q = (
-                rewards
-                + (1 - terminations)
-                * self.gamma
-                * target_model(next_states).max(dim=1)[0]
-            )
+            if USE_DOUBLE_DQN:
+                next_state_actions = model(next_states).argmax(dim=1)
+                target_q = (
+                    rewards
+                    + (1 - terminations)
+                    * self.gamma
+                    * target_model(next_states)
+                    .gather(dim=1, index=next_state_actions.unsqueeze(dim=1))
+                    .squeeze()
+                )
+            else:
+                target_q = (
+                    rewards
+                    + (1 - terminations)
+                    * self.gamma
+                    * target_model(next_states).max(dim=1)[0]
+                )
 
         current_q = (
             model(states).gather(dim=1, index=actions.unsqueeze(dim=1)).squeeze()
@@ -87,18 +100,34 @@ class Agent:
         loss.backward()
         self.optimizer.step()
 
-    def tensor(self, state, dtype=torch.float):
+    def tensor(self, state, dtype: torch.dtype = torch.float) -> torch.Tensor:
         return torch.tensor(state, dtype=dtype, device=device)
 
-    def plot(self, rewards_per_episode, epsilon_per_episode):
+    def plot(
+        self,
+        rewards_per_episode: list,
+        epsilon_per_episode: list,
+        average_score_per_100_episode: list,
+    ):
 
-        fig, axs = plt.subplots(2, 1, figsize=(8, 10))
+        fig, axs = plt.subplots(4, 1, figsize=(8, 10))
 
         axs[0].plot(rewards_per_episode)
         axs[0].set(xlabel="Episode", ylabel="Reward", title="Reward per episode")
 
         axs[1].plot(epsilon_per_episode)
         axs[1].set(xlabel="Episode", ylabel="Epsilon", title="Epsilon per episode")
+
+        axs[2].plot(self.history_score)
+        axs[2].set(xlabel="Episode", ylabel="Score", title="Score per episode")
+
+        x_values = list(range(100, 100 * len(average_score_per_100_episode) + 1, 100))
+        axs[3].plot(x_values, average_score_per_100_episode)
+        axs[3].set(
+            xlabel="Episode",
+            ylabel="Mean Score",
+            title="Mean Score per 100 Episodes",
+        )
 
         # fig.tight_layout()
         fig.savefig("metrics.png")
@@ -109,8 +138,9 @@ class Agent:
 
         best_reward = -np.inf
 
+        starttime = time.time()
+
         for episode in itertools.count():
-            # start_time = time.time()
             terminated = False
             episode_reward = 0
 
@@ -138,9 +168,18 @@ class Agent:
 
             self.history_rewards.append(episode_reward)
             self.history_epsilon.append(self.epsilon)
+            self.history_score.append(env.score)
 
             if episode % 100 == 0:
-                self.plot(self.history_rewards, self.history_epsilon)
+                endtime = time.time()
+                average_score = sum(self.history_score[-100:]) / 100
+                print(
+                    f"Took {endtime - starttime} seconds: min: {min(self.history_score[-100:])}, max: {max(self.history_score[-100:])}, avg: {average_score}"
+                )
+                self.history_score_avg.append(average_score)
+
+                self.plot(self.history_rewards, self.history_epsilon, average_score)
+                starttime = time.time()
 
             if len(self.memory) > BATCH_SIZE:
 
@@ -148,7 +187,7 @@ class Agent:
 
                 self.optimize(minibatch, self.model, self.target_model)
 
-                if step_counter > NETWORK_SYNC_FREQ:
+                if step_counter > TARGET_UPDATE_FREQ:
                     self.target_model.load_state_dict(self.model.state_dict())
                     step_counter = 0
 
@@ -161,6 +200,3 @@ class Agent:
 
                 torch.save(self.model.state_dict(), "models/flappy_dqn.pth")
                 best_reward = episode_reward
-            # end_time = time.time()
-            # print(f"Time taken: {end_time - start_time} seconds")
-        # torch.save(agent.model.state_dict(), "models/flappy_dqn.pth")
