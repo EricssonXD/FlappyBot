@@ -20,18 +20,21 @@ COLLISION_REWARD = -100
 OUT_OF_BOUNDS_REWARD = -1000
 
 # TRAINING CONSTANTS
-USE_GPU = True
+USE_GPU = False
+RENDER_GAME = False
 
 BATCH_SIZE = 32
 EPISODES = 1000
 EPISODE_STOP_REWARD = 50000
 USE_DOUBLE_DQN = True
 USE_DUELING_DQN = True
-USE_NOISY_NET = True
+# This creates modifies the network to use noisy layers,
+# which cannot be used on models that were not trained with them initially
+USE_NOISY_NET = False
 
 # MODEL HYPERPARAMETERS
 EPSILON_START = 1.0
-EPSILON_MIN = 0.0001
+EPSILON_MIN = 0.00001
 EPSILON_DECAY = 0.9995
 
 DISCOUNT_FACTOR = 0.99
