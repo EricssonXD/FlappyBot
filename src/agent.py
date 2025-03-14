@@ -237,7 +237,7 @@ class Agent:
                 endtime = time.time()
                 average_score = sum(self.history_score[-100:]) / 100
                 print(
-                    f"Took {endtime - starttime} seconds: min: {min(self.history_score[-100:])}, max: {max(self.history_score[-100:])}, avg: {average_score}"
+                    f"Took {endtime - starttime:.2f} seconds: min: {min(self.history_score[-100:]):.2f}, max: {max(self.history_score[-100:]):.2f}, avg: {average_score:.2f}"
                 )
                 self.history_score_avg.append(average_score)
 
