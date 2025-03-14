@@ -62,3 +62,24 @@ When using the current epsilon parameters directly to train a new model, it comp
 ![Lowering Epsilon](docs/directly-using-low-epsilon.png)
 
 I'm now gonna try Prioritized Experience Replay
+
+### Update
+After running the current best model, `flappy_dqn_481.pth`, 
+I realized that there are lot of times where there is a low pipe gap followed by a high one,
+despite the AI attempting to fly quickly to the high pipe gap, it failed to do so and crashed.
+
+
+I feel like this might be the main cause of my AI plateauing at around `avg_score = 60`
+
+After chaning the `PIPE_SPACING`, from `200` to `250` I instantly got maxed out reward of `100000` and Score of `1922`,
+which basically means that my AI can run almost indefinitely without losing
+
+
+At this point, I got the current best model using: 
+- Double DQN
+- Dueling DQN
+- Manually tuning the `EPSILON_MIN` from time to time
+
+It now sits at 54217 Episodes, which I believe I could greatly reduce with better techniques and hyperparameters.
+
+Maybe I should test things out and log my total training time + episodes taken for different methods.

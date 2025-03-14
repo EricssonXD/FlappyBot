@@ -107,12 +107,6 @@ class Agent:
             print("No checkpoint found. Starting fresh.")
 
     def act(self, state: torch.Tensor) -> torch.Tensor:
-        """
-        State must be a tensor
-
-        Outputs an action in the form of a tensor
-        """
-
         if USE_NOISY_NET:
             with torch.no_grad():
                 action = self.model(state.unsqueeze(dim=0)).squeeze().argmax()
@@ -267,6 +261,19 @@ class Agent:
 
             self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)
 
+            # If the AI got max score
+            if episode_reward >= EPISODE_STOP_REWARD:
+                episode_reward = EPISODE_STOP_REWARD
+                endtime = time.time()
+                print(f"Took {endtime - starttime:.2f} seconds: Best Score Obtained!")
+                self.save_checkpoint(filename=f"{MODEL_DIR}/checkpoint_max.pth")
+                if sum(self.history_score[-100:]) / 100 >= EPISODE_STOP_REWARD:
+                    print(
+                        "Got best score 100 times in a row! Saving Model! and terminate training"
+                    )
+                    torch.save(self.model.state_dict(), f"{MODEL_DIR}/flappy_dqn.pth")
+                    break
+
             self.history_rewards.append(episode_reward)
             self.history_epsilon.append(self.epsilon)
             self.history_score.append(env.score)
@@ -298,7 +305,7 @@ class Agent:
                     self.target_model.load_state_dict(self.model.state_dict())
                     step_counter = 0
 
-            if episode_reward > self.best_reward:
+            if episode_reward >= self.best_reward:
                 log_message = f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Episode: {episode + 1}, Reward: {episode_reward}, Score: {env.score}"
                 print(log_message)
 

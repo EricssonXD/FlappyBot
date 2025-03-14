@@ -5,7 +5,7 @@ GRAVITY = 0.08
 FLAP_STRENGTH = 7
 PIPE_SPEED = 6
 PIPE_GAP = 150
-PIPE_SPACING = 200  # Distance between pipes
+PIPE_SPACING = 250  # Distance between pipes
 STATE_SIZE = 7
 ACTION_SIZE = 2
 
@@ -25,7 +25,7 @@ RENDER_GAME = False
 
 BATCH_SIZE = 32
 EPISODES = 1000
-EPISODE_STOP_REWARD = 50000
+EPISODE_STOP_REWARD = 100000
 USE_DOUBLE_DQN = True
 USE_DUELING_DQN = True
 # This creates modifies the network to use noisy layers,
