@@ -1,11 +1,15 @@
 import sys
+import os
 from .agent import Agent
 from .config import ACTION_SIZE, STATE_SIZE
+
+# Set the SDL_VIDEODRIVER environment variable to dummy to prevent the game from opening a window
+os.environ["SDL_VIDEODRIVER"] = "dummy"
 from . import flappy_bird
 
 
 def agent(train: bool = False, load_checkpoint: bool = False):
-    env = flappy_bird.Game(training_mode=train, pump=True)
+    env = flappy_bird.Game(training_mode=train, pump=True, render_game=False)
     agent = Agent(state_size=STATE_SIZE, action_size=ACTION_SIZE)
 
     if train:

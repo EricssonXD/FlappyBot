@@ -86,7 +86,9 @@ class Pipe(Sprite):
 
 class Game:
     def __init__(self, training_mode=True, render_game=True, pump=False):
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = pygame.display.set_mode(
+            (SCREEN_WIDTH, SCREEN_HEIGHT), 0 if render_game else pygame.HIDDEN
+        )
         self.clock = pygame.time.Clock()
         self.bird = Bird()
         self.pipes = Group()
