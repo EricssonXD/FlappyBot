@@ -1,32 +1,16 @@
 from agent import Agent
 from config import ACTION_SIZE, STATE_SIZE
-from dqn import DQN
 import flappy_bird
-import pygame
-import torch
 
 
-def train():
-    env = flappy_bird.Game(training_mode=True)
+def agent(train: bool = False):
+    env = flappy_bird.Game(training_mode=train, pump=True)
     agent = Agent(state_size=STATE_SIZE, action_size=ACTION_SIZE)
-    agent.train(env=env)
 
-
-def test():
-    env = flappy_bird.Game(training_mode=False)
-    model = DQN(STATE_SIZE, ACTION_SIZE)
-    model.load_state_dict(torch.load("models/flappy_dqn.pth"))
-    model.eval()
-
-    while True:
-        state = env.reset()
-        terminated = False
-        while not terminated:
-            pygame.event.pump()
-            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-            with torch.no_grad():
-                action = model(state_tensor).argmax().item()
-            state, _, terminated = env.step(action)
+    if train:
+        agent.train(env=env)
+    else:
+        agent.test(env=env)
 
 
 def play():
@@ -41,9 +25,9 @@ if __name__ == "__main__":
 
     choice = input("Enter your choice: ")
     if choice == "1":
-        train()
+        agent(True)
     elif choice == "2":
-        test()
+        agent()
     elif choice == "3":
         play()
     else:

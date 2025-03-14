@@ -85,7 +85,7 @@ class Pipe(Sprite):
 
 
 class Game:
-    def __init__(self, training_mode=True, render_game=True):
+    def __init__(self, training_mode=True, render_game=True, pump=False):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
         self.bird = Bird()
@@ -95,6 +95,7 @@ class Game:
         self.score = 0
         self.training_mode = training_mode  # Disable rendering for faster training
         self.render_game = render_game
+        self.pump = pump or training_mode
 
     def reset(self):
         self.all_sprites.empty()
@@ -187,7 +188,7 @@ class Game:
         if self.render_game:
             self.render()
 
-        if self.training_mode:
+        if self.pump:
             pygame.event.pump()
 
         return self._get_state(), reward, gameover

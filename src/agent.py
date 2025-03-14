@@ -133,6 +133,20 @@ class Agent:
         fig.savefig("metrics.png")
         plt.close(fig)
 
+    def test(self, env):
+        model = self.model
+        model.load_state_dict(torch.load("models/flappy_dqn.pth"))
+        model.eval()
+
+        while True:
+            state = env.reset()
+            terminated = False
+            while not terminated:
+                state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+                with torch.no_grad():
+                    action = model(state_tensor).argmax().item()
+                state, _, terminated = env.step(action)
+
     def train(self, env):
         self.epsilon = EPSILON_START
 
