@@ -83,3 +83,6 @@ At this point, I got the current best model using:
 It now sits at 54217 Episodes, which I believe I could greatly reduce with better techniques and hyperparameters.
 
 Maybe I should test things out and log my total training time + episodes taken for different methods.
+
+
+I also noticed that the bird keep grazing the lower pipe, maybe I should try to do something about it.

@@ -15,10 +15,10 @@ class DQN(nn.Module):
         device="cpu",
     ):
         super(DQN, self).__init__()
+        self.use_dueling = use_dueling
 
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size2)
-        self.use_dueling = use_dueling
 
         if self.use_dueling:
             self.fc_value = nn.Linear(hidden_size2, 256)

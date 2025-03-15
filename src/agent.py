@@ -2,9 +2,9 @@ import os
 import torch
 import torch.optim as optim
 import numpy as np
-from collections import deque
 import random
 import matplotlib.pyplot as plt
+from .memory import ReplayBuffer
 from .dqn import DQN
 from .config import (
     BATCH_SIZE,
@@ -41,7 +41,7 @@ class Agent:
     def __init__(self, state_size: int, action_size: int):
         self.state_size: int = state_size
         self.action_size: int = action_size
-        self.memory: deque = deque([], maxlen=MEMORY_SIZE)  # Experience replay buffer
+        self.memory = ReplayBuffer(maxlen=MEMORY_SIZE)  # Experience replay buffer
         self.gamma: float = DISCOUNT_FACTOR  # Discount factor
         self.epsilon: float = EPSILON_START  # Exploration rate
         self.epsilon_min: float = EPSILON_MIN
@@ -297,7 +297,7 @@ class Agent:
 
             if len(self.memory) > BATCH_SIZE:
 
-                minibatch = random.sample(self.memory, BATCH_SIZE)
+                minibatch = self.memory.sample(BATCH_SIZE)
 
                 self.optimize(minibatch, self.model, self.target_model)
 
