@@ -4,7 +4,7 @@ import torch.optim as optim
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-from .memory import ReplayBuffer
+from .memory import PriorityReplayBuffer
 from .dqn import DQN
 from .config import (
     BATCH_SIZE,
@@ -41,7 +41,7 @@ class Agent:
     def __init__(self, state_size: int, action_size: int):
         self.state_size: int = state_size
         self.action_size: int = action_size
-        self.memory = ReplayBuffer(maxlen=MEMORY_SIZE)  # Experience replay buffer
+        self.memory = PriorityReplayBuffer(maxlen=MEMORY_SIZE)
         self.gamma: float = DISCOUNT_FACTOR  # Discount factor
         self.epsilon: float = EPSILON_START  # Exploration rate
         self.epsilon_min: float = EPSILON_MIN
@@ -121,8 +121,11 @@ class Agent:
                     action = self.model(state.unsqueeze(dim=0)).squeeze().argmax()
             return action
 
-    def optimize(self, minibatch: list, model: DQN, target_model: DQN) -> None:
+    def replay(self, batch_size: int, model: DQN, target_model: DQN) -> None:
         """Optimizing the model"""
+
+        minibatch, indices, _ = self.memory.sample(batch_size=batch_size)
+
         states, actions, rewards, next_states, terminations = zip(*minibatch)
 
         states = torch.stack(states)
@@ -159,6 +162,9 @@ class Agent:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        error = torch.abs(current_q - target_q)
+        self.memory.update_priorities(indices, error.detach().numpy())
 
     def tensor(self, state, dtype: torch.dtype = torch.float) -> torch.Tensor:
         return torch.tensor(state, dtype=dtype, device=device)
@@ -278,6 +284,32 @@ class Agent:
             self.history_epsilon.append(self.epsilon)
             self.history_score.append(env.score)
 
+            # Experience replay
+            if len(self.memory) > BATCH_SIZE:
+
+                self.replay(BATCH_SIZE, self.model, self.target_model)
+
+                # Sync target model with model every TARGET_UPDATE_FREQ steps which is basically every episode
+                if step_counter > TARGET_UPDATE_FREQ:
+                    self.target_model.load_state_dict(self.model.state_dict())
+                    step_counter = 0
+
+            # Save checkpoint every 1000 episodes
+            if episode % 1000 == 0:
+                self.save_checkpoint()
+
+            # Save model if it performs better
+            if episode_reward >= self.best_reward:
+                log_message = f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Episode: {episode + 1}, Reward: {episode_reward}, Score: {env.score}"
+                print(log_message)
+
+                with open(f"{LOG_DIR}/logs.txt", "a") as f:
+                    f.write(log_message + "\n")
+
+                torch.save(self.model.state_dict(), "models/flappy_dqn.pth")
+                self.best_reward = episode_reward
+
+            # Print metrics every 100 episodes
             if episode % 100 == 0:
                 endtime = time.time()
                 average_score = sum(self.history_score[-100:]) / 100
@@ -290,27 +322,3 @@ class Agent:
                     self.history_rewards, self.history_epsilon, self.history_score_avg
                 )
                 starttime = time.time()
-
-            # Save checkpoint every 1000 episodes
-            if episode % 1000 == 0:
-                self.save_checkpoint()
-
-            if len(self.memory) > BATCH_SIZE:
-
-                minibatch = self.memory.sample(BATCH_SIZE)
-
-                self.optimize(minibatch, self.model, self.target_model)
-
-                if step_counter > TARGET_UPDATE_FREQ:
-                    self.target_model.load_state_dict(self.model.state_dict())
-                    step_counter = 0
-
-            if episode_reward >= self.best_reward:
-                log_message = f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Episode: {episode + 1}, Reward: {episode_reward}, Score: {env.score}"
-                print(log_message)
-
-                with open(f"{LOG_DIR}/logs.txt", "a") as f:
-                    f.write(log_message + "\n")
-
-                torch.save(self.model.state_dict(), "models/flappy_dqn.pth")
-                self.best_reward = episode_reward
